@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Pace Calculator</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f8f9fa;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            background-color: #f5f7fa;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        .calculator {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .time-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+        }
+
+        span.time-separator {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #3a7bbf;
+        }
+
+        button.secondary {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        button.secondary:hover {
+            background-color: #e9ecef;
+        }
+
+        .results {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .result-group {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .result-group:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .result-group h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .calculator, .results {
+                padding: 15px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Running Pace Calculator</h1>
+        
+        <div class="calculator">
+            <div class="input-group">
+                <label for="pace-type">Select Pace Type:</label>
+                <select id="pace-type" onchange="updateLabels()">
+                    <option value="mile">Minutes per Mile</option>
+                    <option value="km">Minutes per Kilometer</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label id="pace-label">Pace (min:sec per mile):</label>
+                <div class="time-input">
+                    <input type="number" id="minutes" min="0" max="59" value="8">
+                    <span class="time-separator">:</span>
+                    <input type="number" id="seconds" min="0" max="59" value="30">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="calculatePace()">Calculate</button>
+                <button class="secondary" onclick="resetForm()">Reset</button>
+            </div>
+        </div>
+        
+        <div class="results">
+            <div class="result-group">
+                <h3 id="result-label">Pace in kilometers:</h3>
+                <div class="result-value" id="result">--:--</div>
+            </div>
+            
+            <div class="result-group">
+                <h3>Common Race Distances:</h3>
+                <div>
+                    <p><strong>5K:</strong> <span id="time-5k">--:--</span></p>
+                    <p><strong>10K:</strong> <span id="time-10k">--:--</span></p>
+                    <p><strong>Half Marathon (21.1K):</strong> <span id="time-half">--:--</span></p>
+                    <p><strong>Marathon (42.2K):</strong> <span id="time-full">--:--</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateLabels() {
+            const paceType = document.getElementById('pace-type').value;
+            const paceLabel = document.getElementById('pace-label');
+            const resultLabel = document.getElementById('result-label');
+            
+            if (paceType === 'mile') {
+                paceLabel.textContent = 'Pace (min:sec per mile):';
+                resultLabel.textContent = 'Pace in kilometers:';
+            } else {
+                paceLabel.textContent = 'Pace (min:sec per kilometer):';
+                resultLabel.textContent = 'Pace in miles:';
+            }
+        }
+        
+        function calculatePace() {
+            // Get input values
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('seconds').value) || 0;
+            const paceType = document.getElementById('pace-type').value;
+            
+            // Calculate total seconds
+            const totalSeconds = (minutes * 60) + seconds;
+            
+            // Conversion factors
+            const mileToKm = 0.621371; // 1 km = 0.621371 miles
+            
+            let convertedSeconds;
+            let conversionText;
+            
+            if (paceType === 'mile') {
+                // Converting from min/mile to min/km
+                convertedSeconds = totalSeconds * mileToKm;
+                conversionText = 'min/km';
+            } else {
+                // Converting from min/km to min/mile
+                convertedSeconds = totalSeconds / mileToKm;
+                conversionText = 'min/mile';
+            }
+            
+            // Format the result
+            const resultMinutes = Math.floor(convertedSeconds / 60);
+            const resultSeconds = Math.round(convertedSeconds % 60);
+            const formattedResult = `${resultMinutes}:${resultSeconds.toString().padStart(2, '0')}`;
+            
+            // Display the result
+            document.getElementById('result').textContent = formattedResult;
+            
+            // Calculate race times
+            calculateRaceTimes(paceType === 'mile' ? totalSeconds : convertedSeconds, paceType);
+        }
+        
+        function calculateRaceTimes(paceInSeconds, paceType) {
+            // Distance in the original unit (miles or km)
+            const distances = {
+                '5k': paceType === 'mile' ? 3.10686 : 5,
+                '10k': paceType === 'mile' ? 6.21371 : 10,
+                'half': paceType === 'mile' ? 13.1094 : 21.0975,
+                'full': paceType === 'mile' ? 26.2188 : 42.195
+            };
+            
+            // Calculate times
+            for (const [race, distance] of Object.entries(distances)) {
+                const totalSeconds = paceInSeconds * distance;
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = Math.round(totalSeconds % 60);
+                
+                let formattedTime;
+                if (hours > 0) {
+                    formattedTime = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+                
+                document.getElementById(`time-${race}`).textContent = formattedTime;
+            }
+        }
+        
+        function resetForm() {
+            document.getElementById('minutes').value = '8';
+            document.getElementById('seconds').value = '30';
+            document.getElementById('pace-type').value = 'mile';
+            document.getElementById('result').textContent = '--:--';
+            document.getElementById('time-5k').textContent = '--:--';
+            document.getElementById('time-10k').textContent = '--:--';
+            document.getElementById('time-half').textContent = '--:--';
+            document.getElementById('time-full').textContent = '--:--';
+            updateLabels();
+        }
+        
+        // Initialize the page
+        updateLabels();
+    </script>
+</body>
+</html>
